@@ -1,11 +1,15 @@
 from flask import Flask, request, jsonify
 import os
+import tempfile
 
 app = Flask(__name__)
 
 # We save the collected data to a Temporary folder since this is a demo, 
 # of course real attacker would store it somewhere persistent
-tmp_file_path = '/tmp/received_data.txt'
+# Get the Windows and Linux temporary directory using tempfile module
+tmp_dir = tempfile.gettempdir()
+tmp_file_path = os.path.join(tmp_dir, 'received_data.txt')
+
 
 # Function to check if the content is the same as the last saved content
 def is_duplicate_content(new_content):
